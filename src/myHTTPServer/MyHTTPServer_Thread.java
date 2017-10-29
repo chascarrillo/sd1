@@ -4,7 +4,9 @@ import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -13,10 +15,11 @@ import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.Socket;
 import java.util.Date;
-import java.util.Scanner;
 import java.util.StringTokenizer;
+
+import myHTTPServer.EstadoHilo;
+import static myHTTPServer.MyHTTPServer.hilos;
 import static myHTTPServer.MyHTTPServer.cont;
-import static myHTTPServer.MyHTTPServer.path;
 
 /**
  *
@@ -25,7 +28,9 @@ import static myHTTPServer.MyHTTPServer.path;
 public class MyHTTPServer_Thread
 extends Thread
 {
-	private static int DEBUG = 2;
+	private static final int ERROR = 0;
+	private static final int WARNING = 1;
+	private static final int DEBUG = 2;
 
 	private int p_controller;
 	private Inet4Address IP_controller;
@@ -36,8 +41,6 @@ extends Thread
 	public void start()
 	{
 		super.start();
-
-		MyHTTPServer.cont++;
 	}
 
 	public void depura(String mensaje)
@@ -47,7 +50,9 @@ extends Thread
 
 	public void depura(String mensaje, int gravedad)
 	{
-		System.out.println("Mensaje: " + mensaje);
+		if(gravedad != ERROR)
+			System.out.println("\t" + mensaje);
+		else System.err.println(mensaje);
 	}
 
 	public MyHTTPServer_Thread(Socket recibido, Inet4Address iP, int p_controller)
@@ -92,9 +97,10 @@ extends Thread
 		return;
 	}
 
+	@Override
 	public void run()
 	{
-		depura("Procesando conexion...");
+		System.err.println("Hilo en marcha");
 
 		String datos = "";
 		try
@@ -104,62 +110,130 @@ extends Thread
 
 			String cadena = "";
 
-			do
+			
+			cadena = in.readLine();
+
+			depura("in.readLine() contiene:\n\n\t" + cadena + "\n");
+
+			StringTokenizer stk = new StringTokenizer(cadena);
+
+			if ((stk.countTokens() >= 2) && stk.nextToken().equals("GET"))
 			{
-				cadena = in.readLine();
-
-				if (cadena == null)
+				String pedido = stk.nextToken();
+				depura("Pedido: " + pedido);
+				
+				if (pedido.length() >= 15)
 				{
-					depura("No se puede atender la peticion, la cadena esta vacia.");
-				}
-				else
-				{
-					depura("in.readLine() contiene:\n." + cadena + ".");
-				}
-
-				StringTokenizer stk = new StringTokenizer(cadena);
-
-				if ((stk.countTokens() >= 2) && stk.nextToken().equals("GET"))
-				{
-					String pedido = stk.nextToken();
-					System.out.println("Pedido: " + pedido);
-					if (pedido.substring(1).equals("") || pedido.substring(1).equals("index.htm"))
+					if (!pedido.substring(1, 14).equals("controladorSD"))
 					{
+						cadena = null;
 						retornaFichero(pedido);
-						socketServidor.close();
-						MyHTTPServer.cont--;
-					} else if (pedido.substring(1, 14).equals("controladorSD"))
+						in.close();
+					} else
 					{
+						cadena = null;
 						pedido = pedido.substring(15);
-
+	
 						Socket sc = new Socket(IP_controller, p_controller);
 						escribeSocket(sc, pedido);
 						String print = leeSocket(sc, datos);
-
+	
 						PrintWriter pw = new PrintWriter(socketServidor.getOutputStream());
 						pw.println(print);
 						pw.flush();
-						socketServidor.close();
-						cadena = null;
+						in.close();
 					}
 				}
+				else
+				{
+					cadena = null;
+					retornaFichero(pedido);
+					in.close();
+				}
+			}
 
-			} while (cadena != null && cadena.length() != 0);
-		} catch (Exception e) {
-			depura("Server error\n" + e.toString());
+			
+		} catch (IOException e)
+		{
+			depura("Error en hilo del servidor\n");
+			e.printStackTrace();
+		}  finally
+		{
+			try {
+				socketServidor.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		finally
+		{
+			hilos.remove(this, socketServidor);
+			cont--;
+			depura("Hilo terminado! Cerrando...", ERROR);
 		}
-		depura("Terminado!");
+		}
+	}
+
+	private void enviaHTML(File mifichero)
+	throws IOException
+	{
+		out.println("HTTP/1.1 200 OK");
+		out.println("Date: " + new Date());
+		out.println("Content-Length: " + mifichero.length());
+		out.println("Content-Type: text/html");
+		out.println("Server: MyHTTPServer Server/1.1");
+		out.println("\n\n");
+		BufferedReader ficheroLocal = new BufferedReader(new FileReader(mifichero));
+
+		String linea = "";
+
+		do
+		{
+			linea = ficheroLocal.readLine();
+
+			if (linea != null)
+			{
+				out.println(linea);
+			}
+		} while (linea != null);
+
+		depura("fichero enviado, cerrando comunicacion");
+
+		ficheroLocal.close();
+	}
+	
+	private void envia404(File mifichero)
+	throws IOException
+	{
+		out.println("HTTP/1.1 404");
+		out.println("Date: " + new Date());
+		out.println("Content-Length: " + mifichero.length());
+		out.println("Content-Type: text/html");
+		out.println("Server: MyHTTPServer Server/1.1");
+		out.println("\n\n");
+		BufferedReader ficheroLocal = new BufferedReader(new FileReader(mifichero));
+
+		String linea = "";
+
+		do
+		{
+			linea = ficheroLocal.readLine();
+
+			if (linea != null)
+			{
+				out.println(linea);
+			}
+		} while (linea != null);
+
+		depura("fichero enviado, cerrando comunicacion");
+
+		ficheroLocal.close();
 	}
 
 	void retornaFichero(String sfichero)
 	{
-		depura("Recuperamos el fichero " + sfichero);
+		depura(("tratamos de recuperar el fichero " + sfichero), ERROR);
 
-	// comprobamos si tiene una barra al principio
-	if (sfichero.startsWith("/"))
-	{
-
-		if (sfichero.length() == 1)
+		if (sfichero.equals("/"))
 		{
 			sfichero = sfichero + "index.htm";
 		}
@@ -167,47 +241,27 @@ extends Thread
 		try
 		{
 			File mifichero = new File(sfichero);
-			System.out.println("Buscando fichero " + mifichero.getName());
+			depura("Buscando fichero " + mifichero.getName());
 
 			if (mifichero.exists())
 			{
-				out.println("HTTP/1.1 200 OK");
-				out.println("Date: " + new Date());
-				out.println("Content-Length: " + mifichero.length());
-				out.println("Content-Type: text/html");
-				out.println("Server: MyHTTPServer Server/1.1");
-				out.println("\n\n");
-				BufferedReader ficheroLocal = new BufferedReader(new FileReader(mifichero));
-
-				String linea = "";
-
-				do
-				{
-					linea = ficheroLocal.readLine();
-
-					if (linea != null)
-					{
-						out.println(linea);
-					}
-				} while (linea != null);
-
-				depura("fin envio fichero");
-
-				ficheroLocal.close();
-				out.close();
-
-			} // fin si el fichero existe
+				enviaHTML(mifichero);
+			}
 			else
 			{
 				depura("No encuentro el fichero " + mifichero.toString());
-				out.println("HTTP/1.1 404");
-				out.close();
+				mifichero = new File(MyHTTPServer.path + "/error404.htm");
+				envia404(mifichero);
 			}
 		} catch (Exception e)
 		{
 			depura("Error al retornar fichero");
+			e.printStackTrace();
+		} finally
+		{
+			out.close();
 		}
-	}
+	
 	}
 
 }

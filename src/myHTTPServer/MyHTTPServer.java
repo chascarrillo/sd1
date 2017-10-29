@@ -1,7 +1,8 @@
 package myHTTPServer;
 
 import java.net.*;
-//import myhttpserver.MyHTTPServer_Thread;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.lang.Exception;
 
 /**
@@ -10,7 +11,8 @@ import java.lang.Exception;
  */
 public class MyHTTPServer
 {
-	public static final String path = "/src/myHTTPServer";
+	public static final String path = System.getProperty("user.dir");
+	public static Map<Thread, Socket> hilos = null;
 	public static int cont = 0;
 
 	private int puerto;
@@ -19,9 +21,9 @@ public class MyHTTPServer
 	private int puerto_controller;
 	private int maxConexPermitidas;
 
-	private final int ERROR = 0;
-	private final int WARNING = 1;
-	private final int DEBUG = 2;
+	private static final int ERROR = 0;
+	private static final int WARNING = 1;
+	private static final int DEBUG = 2;
 
 	public void depura(String mensaje)
 	{
@@ -30,7 +32,7 @@ public class MyHTTPServer
 
 	public void depura(String mensaje, int gravedad)
 	{
-		System.err.println("Mensaje: " + mensaje);
+		System.out.println(mensaje);
 	}
 
 	public MyHTTPServer(String[] args)
@@ -47,6 +49,7 @@ public class MyHTTPServer
 	public static void main(String[] args)
 	{
 		MyHTTPServer server = new MyHTTPServer(args);
+		hilos = new ConcurrentHashMap<Thread, Socket>(server.maxConexPermitidas);
 		server.run();
 	}
 
@@ -90,20 +93,27 @@ public class MyHTTPServer
 
 	boolean run()
 	{
-		depura("Server running...");
+		depura(path);
+		depura("Servidor en marcha...");
 
 		try
 		{
 			ServerSocket sk = new ServerSocket(puerto);
 
-			depura("Escuchando el puerto " + this.puerto + " en la IP " + this.IP.getHostAddress());
+			depura("Escuchando en " + this.IP.getHostAddress() + ":" + this.puerto);
+			System.out.print("\n");
+			int peticionesAtendidas = 0;
 
 			do
 			{
 				if (cont < maxConexPermitidas)
 				{
 					Socket recibido = sk.accept();
+					peticionesAtendidas++;
+					depura("Peticiones atendidas: " + peticionesAtendidas);
 					Thread hilo = new MyHTTPServer_Thread(recibido, IP, puerto_controller);
+					cont++; // cont-- se ejecuta al final de MyHTTPServer_Thread.run()
+					hilos.put(hilo, recibido);
 					hilo.start();
 				} else
 				{
@@ -113,7 +123,7 @@ public class MyHTTPServer
 			} while (true);
 		} catch (Exception e)
 		{
-			depura("Server error \n" + e.toString());
+			System.err.println("ERROR " + e.toString());
 		}
 		return true;
 	}

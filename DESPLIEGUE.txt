@@ -1,0 +1,16 @@
+1 - compilar la interfaz (InterfRemSondas.java)
+
+	si no funciona el comando, encontrar la ruta de los ejecutables de java con
+		which javac
+	y añadirla a PAth con
+		export PATH=$PATH:<resultado which javac>
+
+2 - compilar el objeto remoto (ObjetoRemSondas.java)
+
+	si no funciona, compilar interfaz y objeto remoto a la vez con
+		javac InterfRemSondas.java ObjetoRemSondas.java
+
+3 - generar el stub de ObjetoRemSondas (mediante)
+		rmic ObjetoRemSondas
+
+4 - 

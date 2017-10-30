@@ -5,7 +5,7 @@ import java.net.*;
 import java.net.UnknownHostException;
 import java.util.*;
 
-import sondasRMI.InterfRemSondas;
+import sondasRMI.ObjetoRemSondas;
 
 import java.rmi.*;
 
@@ -114,12 +114,12 @@ public class Controller
 			 * 
 			 * rmi://localhost:1099/Sonda1 }
 			 */
-			InterfRemSondas objetoRemoto = null;
+			ObjetoRemSondas objetoRemoto = null;
 			String servidor = "rmi://" + IP_RMI.getHostAddress() + ":" + puerto_RMI + "/ObjetoRemSondas";
 			System.setSecurityManager(new RMISecurityManager());
 			if (op != 6)
 			{
-				objetoRemoto = (InterfRemSondas) Naming.lookup(servidor + "/Sonda" + nsonda.toString());
+				objetoRemoto = (ObjetoRemSondas) Naming.lookup(servidor + "/Sonda" + nsonda.toString());
 			}
 
 			switch (op)
@@ -255,10 +255,12 @@ public class Controller
 							}
 							break;
 					}
-
+					ejecutarPeticion(op, nsonda, socketHTTPServer);
 					depura("Posicion: " + pos);
 					depura("Solicitud: " + op);
 					lecturaRecibida = lecturaRecibida.substring(pos + 1, lecturaRecibida.length());
+					depura("\nlectura recibida: \n\n" + lecturaRecibida + "\n\n", SINSALTO);
+					
 				}
 				else if (lecturaRecibida.length() == 0 || lecturaRecibida.equals("index"))
 				{
@@ -267,13 +269,13 @@ public class Controller
 				}
 				else
 				{
-					depura("Peticion incorrecta, comprueba la URK", ERROR);
+					depura("Peticion incorrecta, comprueba la URL", ERROR);
 				}
 
 				depura("Posicion: " + pos);
 				depura("Solicitud: " + op);
 
-
+				socketHTTPServer.close();
 			} while (true);
 		}
 		catch (Exception e)

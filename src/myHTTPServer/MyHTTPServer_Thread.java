@@ -27,7 +27,6 @@ public class MyHTTPServer_Thread
 extends Thread
 {
 	private static final int ERROR = 0;
-	private static final int WARNING = 1;
 	private static final int DEBUG = 2;
 
 	private int p_controller;

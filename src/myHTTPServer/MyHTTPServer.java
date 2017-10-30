@@ -22,7 +22,6 @@ public class MyHTTPServer
 	private int maxConexPermitidas;
 
 	private static final int ERROR = 0;
-	private static final int WARNING = 1;
 	private static final int DEBUG = 2;
 
 	public void depura(String mensaje)
@@ -97,10 +96,12 @@ public class MyHTTPServer
 					hilo.start();
 				} else
 				{
-					Exception ex = new Exception("El servidor no puede atender la peticion");
-					throw ex;
+					Exception e = new Exception("El servidor no puede atender la peticion");
+					throw e;
 				}
-			} while (true);
+			} while (peticionesAtendidas < 100);
+
+			sk.close();
 		} catch (Exception e)
 		{
 			System.err.print("ERROR");

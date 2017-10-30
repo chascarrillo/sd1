@@ -4,6 +4,9 @@ import java.io.*;
 import java.net.*;
 import java.net.UnknownHostException;
 import java.util.*;
+
+import sondasRMI.InterfRemSondas;
+
 import java.rmi.*;
 
 /**
@@ -98,9 +101,8 @@ public class Controller
 		control.run();
 	}
 
-	public void enviarRMI(Inet4Address iP_RMI2, int port, Integer nsonda, int op, Socket socketHTTPServer)
+	public void enviarRMI(Integer nsonda, int op, Socket socketHTTPServer)
 	{
-		String servidor = "rmi://" + iP_RMI2.getHostAddress() + ":" + port;
 
 		try
 		{
@@ -113,7 +115,8 @@ public class Controller
 			 * rmi://localhost:1099/Sonda1 }
 			 */
 			InterfRemSondas objetoRemoto = null;
-			System.setSecurityManager(new /* RMI */SecurityManager());
+			String servidor = "rmi://" + IP_RMI.getHostAddress() + ":" + puerto_RMI + "/ObjetoRemSondas";
+			System.setSecurityManager(new RMISecurityManager());
 			if (op != 6)
 			{
 				objetoRemoto = (InterfRemSondas) Naming.lookup(servidor + "/Sonda" + nsonda.toString());
@@ -186,7 +189,7 @@ public class Controller
 
 	private void ejecutarPeticion(int op, int nsonda, Socket socketHTTPServer)
 	{
-		enviarRMI(IP_RMI, puerto_RMI, nsonda, op, socketHTTPServer);
+		enviarRMI(nsonda, op, socketHTTPServer);
 	}
 
 	private void setLuz(int nsonda, int luz)
@@ -257,7 +260,7 @@ public class Controller
 					depura("Solicitud: " + op);
 					lecturaRecibida = lecturaRecibida.substring(pos + 1, lecturaRecibida.length());
 				}
-				else if (lecturaRecibida.length() == 0 || lecturaRecibida.equals("index.htm"))
+				else if (lecturaRecibida.length() == 0 || lecturaRecibida.equals("index"))
 				{
 					op = 6;
 					ejecutarPeticion(op, nsonda, socketHTTPServer);

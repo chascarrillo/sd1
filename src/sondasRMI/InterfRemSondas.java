@@ -1,4 +1,4 @@
-package controladorSD;
+package sondasRMI;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;

@@ -17,9 +17,8 @@ public class RegistroSondas
 			System.setSecurityManager(new SecurityManager());
 			for (int i = 1; i <= 3; i++)
 			{
-				System.out.println("Entra en pepe " + i);
+				System.out.println("generando sonda " + i);
 				ObjetoRemSondas objRem = new ObjetoRemSondas();
-				System.out.println("CACAGORDA");
 				nombreSonda = "/Sonda" + i;
 				Naming.rebind(nombreSonda, objRem);
 				System.out.println("Servidor de Sondas preparado.");

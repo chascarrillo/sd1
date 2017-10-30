@@ -111,7 +111,7 @@ public class MyHTTPServer
 					Socket recibido = sk.accept();
 					peticionesAtendidas++;
 					depura("Peticiones atendidas: " + peticionesAtendidas);
-					Thread hilo = new MyHTTPServer_Thread(recibido, IP, puerto_controller);
+					Thread hilo = new MyHTTPServer_Thread(recibido, IP_controller, puerto_controller);
 					cont++; // cont-- se ejecuta al final de MyHTTPServer_Thread.run()
 					hilos.put(hilo, recibido);
 					hilo.start();

@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,7 +16,6 @@ import java.net.Socket;
 import java.util.Date;
 import java.util.StringTokenizer;
 
-import myHTTPServer.EstadoHilo;
 import static myHTTPServer.MyHTTPServer.hilos;
 import static myHTTPServer.MyHTTPServer.cont;
 
@@ -116,6 +114,7 @@ extends Thread
 			depura("in.readLine() contiene:\n\n\t" + cadena + "\n");
 
 			StringTokenizer stk = new StringTokenizer(cadena);
+			cadena = null;
 
 			if ((stk.countTokens() >= 2) && stk.nextToken().equals("GET"))
 			{
@@ -126,12 +125,10 @@ extends Thread
 				{
 					if (!pedido.substring(1, 14).equals("controladorSD"))
 					{
-						cadena = null;
 						retornaFichero(pedido);
 						in.close();
 					} else
-					{
-						cadena = null;
+					{ // CONTROLADOR SD
 						pedido = pedido.substring(15);
 	
 						Socket sc = new Socket(IP_controller, p_controller);
@@ -146,30 +143,34 @@ extends Thread
 				}
 				else
 				{
-					cadena = null;
 					retornaFichero(pedido);
 					in.close();
 				}
 			}
 
 			
-		} catch (IOException e)
+		}
+		catch (IOException e)
 		{
 			depura("Error en hilo del servidor\n");
 			e.printStackTrace();
-		}  finally
-		{
-			try {
-				socketServidor.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+		}
 		finally
 		{
-			hilos.remove(this, socketServidor);
-			cont--;
-			depura("Hilo terminado! Cerrando...", ERROR);
-		}
+			try
+			{
+				socketServidor.close();
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
+			}
+			finally
+			{
+				hilos.remove(this, socketServidor);
+				cont--;
+				depura("Hilo terminado! Cerrando...", ERROR);
+			}
 		}
 	}
 

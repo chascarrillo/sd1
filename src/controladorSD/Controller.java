@@ -19,6 +19,7 @@ public class Controller
 	private String html = "";
 
 	private static final int ERROR = 0;
+	private static final int SINSALTO = 1;
 	private static final int DEBUG = 2;
 
 	public void depura(String mensaje)
@@ -28,23 +29,31 @@ public class Controller
 
 	public void depura(String mensaje, int gravedad)
 	{
-		if (gravedad != ERROR)
-			System.out.println("\t" + mensaje);
-		else
-			System.err.println(mensaje);
+		switch(gravedad)
+		{
+			case ERROR:
+				System.err.println(mensaje);
+				break;
+			case SINSALTO:
+				System.err.print(mensaje);
+				break;
+			default:
+				System.out.print("\t" + mensaje);
+				break;
+		}
 	}
 
-	public void escribeSocket(Socket p_sk, String p_Datos)
+	public void escribeSocket(Socket socketHTTPServer, String p_Datos)
 	{
 		try
 		{
-			OutputStream aux = p_sk.getOutputStream();
-			DataOutputStream flujo = new DataOutputStream(aux);
+			DataOutputStream flujo = new DataOutputStream(socketHTTPServer.getOutputStream());
 			flujo.writeUTF(p_Datos);
 		}
 		catch (Exception e)
 		{
-			System.out.println("Error: " + e.toString());
+			depura("Error: ", SINSALTO);
+			e.printStackTrace();
 		}
 	}
 
@@ -67,7 +76,7 @@ public class Controller
 		}
 		else
 		{
-			depura("Error en servidor, parametros invalidos.");
+			depura("Error en servidor, parametros invalidos.\n");
 		}
 	}
 

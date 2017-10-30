@@ -5,7 +5,7 @@ import java.rmi.RemoteException;
 
 /**
  *
- * @author pc_user
+ * @author ALFONSO ARACIL ANDRES, 48563029R
  */
 public interface InterfRemSondas
 extends Remote

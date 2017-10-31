@@ -1,26 +1,53 @@
-1 - compilar la interfaz (InterfRemSondas.java)
+MAQUINA 1
 
-	si no funciona el comando, encontrar la ruta de los ejecutables de java con
-		which javac
-	y añadirla a PATH con
-		export PATH=$PATH:<resultado which javac>
 
-2 - compilar el objeto remoto (ObjetoRemSondas.java)
-
-	si no funciona, compilar interfaz y objeto remoto a la vez con
+1 - compilar la interfaz y el objeto remoto (ObjetoRemSondas.java)
 		javac InterfRemSondas.java ObjetoRemSondas.java
 
-	si sigue sin funcionar, borra la primera linea (package sondasRMI;) de los archivos y prueba de nuevo
-	Debemos incluir en la variable de entorno CLASSPATH la ruta a la interfaz remota para compilar el objeto remoto.
-		export CLASSPATH=$CLASSPATH:<ruta>
 
-3 - generar el stub de ObjetoRemSondas (mediante)
+2 - generar el stub de ObjetoRemSondas (mediante)
+		
+	Debemos incluir en la variable de entorno CLASSPATH la ruta a la interfaz
+	remota para compilar el stub.
+		export CLASSPATH=$CLASSPATH:<ruta>
 		rmic ObjetoRemSondas
 
-4 - Controller usa la interfaz y el stub para comunicarse asi que lo metemos en un jar para transportarlo
-		jar cvf interstub.jar InterfRemSondas.class ObjetoRemSonda_Stub.class
 
-5 - compilamos el registro
+3 - compilamos el registro
 		javac RegistroSondas.java
 
-6 - 
+
+4 - registramos el stub 
+
+	Debemos vaciar CLASSPATH antes de ejecutar rmiregistry
+		unset CLASSPATH
+		rmiregistry -J-Djava.security.policy=registrar.policy
+
+
+5 - abrimos otra consola y ejecutamos el registro
+		java -Djava.security.policy=registrar.policy RegistroSondas
+
+
+
+
+MAQUINA 2
+
+
+5 - compilamos Controller.java
+		javac Controller.java
+
+
+6 - ejecutamos el controlador
+		java –Djava.security.policy=registrar.policy Controller puertoEscucha ipRMI
+
+
+
+
+MAQUINA 3
+
+
+7 - compilamos el servidor
+		javac MyHTTPServer.java MyHTTPServer_Thread.java
+
+8 - ejecutamos el servidor
+		java MyHTTPServer puerto maximasConexionesPermitidas ipControlador puertoControlador

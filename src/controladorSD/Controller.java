@@ -1,12 +1,7 @@
-package controladorSD;
-
 import java.io.*;
 import java.net.*;
 import java.net.UnknownHostException;
 import java.util.*;
-
-import sondasRMI.ObjetoRemSondas;
-
 import java.rmi.*;
 
 /**
@@ -70,12 +65,12 @@ public class Controller
 	public void compruebaParametros(String[] args)
 	throws UnknownHostException
 	{
-		if (args.length == 3)
+		if (args.length == 2)
 		{
 			this.IP = (Inet4Address) InetAddress.getByAddress(InetAddress.getLocalHost().getAddress());
 			this.puerto = Integer.parseInt(args[0]);
 			this.IP_RMI = (Inet4Address) InetAddress.getByName(args[1]);
-			this.puerto_RMI = Integer.parseInt(args[2]);
+			this.puerto_RMI = 1099;
 		}
 		else
 		{

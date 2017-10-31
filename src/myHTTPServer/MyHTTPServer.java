@@ -1,6 +1,6 @@
-package myHTTPServer;
-
 import java.net.*;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.lang.Exception;
@@ -13,7 +13,6 @@ public class MyHTTPServer
 {
 	public static final String path = System.getProperty("user.dir");
 	public static Map<Thread, Socket> hilos = null;
-	public static int cont = 0;
 
 	private int puerto;
 	private Inet4Address IP;
@@ -85,13 +84,12 @@ public class MyHTTPServer
 
 			do
 			{
-				if (cont < maxConexPermitidas)
+				if (hilos.size() < maxConexPermitidas)
 				{
 					Socket recibido = sk.accept();
 					peticionesAtendidas++;
 					depura("Peticiones atendidas: " + peticionesAtendidas);
-					Thread hilo = new MyHTTPServer_Thread(recibido, IP_controller, puerto_controller);
-					cont++; // cont-- se ejecuta al final de MyHTTPServer_Thread.run()
+					Thread hilo = new MyHTTPServer_Thread(recibido, IP_controller, puerto_controller, hilos);
 					hilos.put(hilo, recibido);
 					hilo.start();
 				} else

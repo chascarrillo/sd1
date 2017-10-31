@@ -1,5 +1,3 @@
-package myHTTPServer;
-
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -15,9 +13,10 @@ import java.net.Inet4Address;
 import java.net.Socket;
 import java.util.Date;
 import java.util.StringTokenizer;
-
-import static myHTTPServer.MyHTTPServer.hilos;
-import static myHTTPServer.MyHTTPServer.cont;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *
@@ -26,6 +25,7 @@ import static myHTTPServer.MyHTTPServer.cont;
 public class MyHTTPServer_Thread
 extends Thread
 {
+	public static Map<Thread, Socket> hilos = null;
 	private static final int ERROR = 0;
 	private static final int DEBUG = 2;
 
@@ -52,11 +52,12 @@ extends Thread
 		else System.err.println(mensaje);
 	}
 
-	public MyHTTPServer_Thread(Socket recibido, Inet4Address iP, int p_controller)
+	public MyHTTPServer_Thread(Socket recibido, Inet4Address iP, int p_controller, Map<Thread, Socket> hilos)
 	{
 		this.socketServidor = recibido;
 		this.IP_controller = iP;
 		this.p_controller = p_controller;
+		this.hilos = hilos;
 	}
 
 	public void peticionWeb(Socket s)
@@ -115,36 +116,46 @@ extends Thread
 			StringTokenizer stk = new StringTokenizer(cadena);
 			cadena = null;
 
-			if ((stk.countTokens() >= 2) && stk.nextToken().equals("GET"))
+			if ((stk.countTokens() >= 2))
 			{
-				String pedido = stk.nextToken();
-				depura("Pedido: " + pedido);
-				
-				if (pedido.length() >= 15)
+				if(stk.nextToken().equals("GET"))
 				{
-					if (!pedido.substring(1, 14).equals("controladorSD"))
+					String pedido = stk.nextToken();
+					depura("Pedido: " + pedido);
+				
+					if (pedido.length() >= 15)
+					{
+						if (!pedido.substring(1, 14).equals("controladorSD"))
+						{
+							retornaFichero(pedido);
+							in.close();
+						} else
+						{ // CONTROLADOR SD
+							try
+							{
+								pedido = pedido.substring(15);
+		
+								Socket sc = new Socket(IP_controller, p_controller);
+								escribeSocket(sc, pedido);
+								String print = leeSocket(sc, datos);
+		
+								PrintWriter pw = new PrintWriter(socketServidor.getOutputStream());
+								pw.println(print);
+								pw.flush();
+							}
+							catch (Exception e)
+							{
+								envia40x(null, 9);
+								e.printStackTrace();
+							}
+						}
+					}
+					else
 					{
 						retornaFichero(pedido);
-						in.close();
-					} else
-					{ // CONTROLADOR SD
-						pedido = pedido.substring(15);
-	
-						Socket sc = new Socket(IP_controller, p_controller);
-						escribeSocket(sc, pedido);
-						String print = leeSocket(sc, datos);
-	
-						PrintWriter pw = new PrintWriter(socketServidor.getOutputStream());
-						pw.println(print);
-						pw.flush();
-						in.close();
 					}
 				}
-				else
-				{
-					retornaFichero(pedido);
-					in.close();
-				}
+				else envia40x(null, 5);
 			}
 
 			
@@ -159,6 +170,7 @@ extends Thread
 			try
 			{
 				socketServidor.close();
+				in.close();
 			}
 			catch (IOException e)
 			{
@@ -167,7 +179,6 @@ extends Thread
 			finally
 			{
 				hilos.remove(this, socketServidor);
-				cont--;
 				depura("Hilo terminado! Cerrando...", ERROR);
 			}
 		}
@@ -201,10 +212,11 @@ extends Thread
 		ficheroLocal.close();
 	}
 	
-	private void envia404(File mifichero)
+	private void envia40x(File mifichero, int n)
 	throws IOException
 	{
-		out.println("HTTP/1.1 404");
+		mifichero = new File(MyHTTPServer.path + "/error40" + n + ".htm");
+		out.println("HTTP/1.1 40" + n);
 		out.println("Date: " + new Date());
 		out.println("Content-Length: " + mifichero.length());
 		out.println("Content-Type: text/html");
@@ -250,8 +262,8 @@ extends Thread
 			else
 			{
 				depura("No encuentro el fichero " + mifichero.toString());
-				mifichero = new File(MyHTTPServer.path + "/error404.htm");
-				envia404(mifichero);
+				mifichero = null;
+				envia40x(mifichero, 4);
 			}
 		} catch (Exception e)
 		{

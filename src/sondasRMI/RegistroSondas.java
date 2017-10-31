@@ -1,5 +1,3 @@
-package sondasRMI;
-
 import java.rmi.Naming;
 
 /**

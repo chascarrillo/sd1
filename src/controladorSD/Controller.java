@@ -1,7 +1,12 @@
+package controladorSD;
+
 import java.io.*;
 import java.net.*;
 import java.net.UnknownHostException;
 import java.util.*;
+
+import sondasRMI.InterfRemSondas;
+
 import java.rmi.*;
 
 /**
@@ -109,47 +114,36 @@ public class Controller
 			 * 
 			 * rmi://localhost:1099/Sonda1 }
 			 */
-			ObjetoRemSondas objetoRemoto = null;
+			InterfRemSondas objetoRemoto = null;
 			String servidor = "rmi://" + IP_RMI.getHostAddress() + ":" + puerto_RMI + "/ObjetoRemSondas";
-			System.setSecurityManager(new RMISecurityManager());
+//			System.setSecurityManager(new RMISecurityManager());
+			System.setSecurityManager(new SecurityManager());
 			if (op != 6)
 			{
-				objetoRemoto = (ObjetoRemSondas) Naming.lookup(servidor + "/Sonda" + nsonda.toString());
+				objetoRemoto = (InterfRemSondas) Naming.lookup(servidor + "/Sonda" + nsonda.toString());
 			}
 
 			switch (op)
 			{
 				case 1:
 					html = "<html>\n" + "<head><h1>Acceso sondas</h1></head>\n" + "<body><h4>Sonda" + nsonda + "</h4>\n"
-							+ "	<p>El volumen de la sonda es: " + objetoRemoto.getVolumen(nsonda).toString() + "</p>\n"
+							+ "	<p>La humedad de la sonda es: " + objetoRemoto.getHumedad(nsonda).toString() + "</p>\n"
 							+ "</body>\n" + "</html>";
 					break;
 
 				case 2:
 					html = "<html>\n" + "<head><h1>Acceso sondas</h1></head>\n" + "<body><h4>Sonda" + nsonda + "</h4>\n"
-							+ "	<p>La fecha de la sonda es: " + objetoRemoto.getFecha(nsonda).toString() + "</p>\n"
+							+ "	<p>La temperatura de la sonda es: " + objetoRemoto.getTemperatura(nsonda).toString() + "</p>\n"
 							+ "</body>\n" + "</html>";
 					break;
 
 				case 3:
-					html = "<html>\n" + "<head><h1>Acceso sondas</h1></head>\n" + "<body><h4>Sonda" + nsonda + "</h4>\n"
-							+ "	<p>La luz de la sonda es: " + objetoRemoto.getLuz(nsonda).toString() + "</p>\n"
-							+ "</body>\n" + "</html>";
-					break;
-
-				case 4:
-					html = "<html>\n" + "<head><h1>Acceso sondas</h1></head>\n" + "<body><h4>Sonda" + nsonda + "</h4>\n"
-							+ "	<p>La ultima fecha de la sonda es: " + objetoRemoto.getUltimaFecha(nsonda).toString()
-							+ "</p>\n" + "</body>\n" + "</html>";
-					break;
-
-				case 6:
 					html = "<html><h1>Lista sondas activas</h1>\n";
 					for (int j = 1; j <= 3; j++)
 					{
 						html = html + "<h4>Sonda " + j + "</h4>\n" + "<ol>\n" + "<ul>\n"
-								+ "   <li><a href=\"/controladorSD/volumen?sonda=" + j + "\" >Volumen</a></li>\n"
-								+ "   <li><a href=\"/controladorSD/fecha?sonda=" + j + "\" >Fecha</a></li>\n"
+								+ "   <li><a href=\"/controladorSD/humedad?sonda=" + j + "\" >Humedad</a></li>\n"
+								+ "   <li><a href=\"/controladorSD/temperatura?sonda=" + j + "\" >Temperatura</a></li>\n"
 								+ "   <li><a href=\"/controladorSD/luz?sonda=" + j + "\" >Luz</a></li>\n"
 								+ "   <li><input type=\"text\" name=\"nombredelacaja\"><button type=\"submit\" onclick=\"myFunction()\"></li>\n"
 								+ "</ul>\n" + "</ol>\n" + "<script type=\"text/javascript\">\n"
@@ -196,7 +190,7 @@ public class Controller
 	{
 		depura("Controller running...", ERROR);
 		int pos = 0;
-		int op = 0; // Indicamos la solicitud del servidor: 1- volumen, 2-fecha, 3-luz,
+		int op = 0; // Indicamos la solicitud del servidor: 1- humedad, 2-temperatura, 3-luz,
 					// 4-ultimafecha, 5-setluz
 		int nsonda = 0;
 		int setluz = 0;
@@ -222,12 +216,12 @@ public class Controller
 				{
 					switch (lecturaRecibida.substring(0, pos))
 					{
-						case "volumen":
-							System.out.println("ha detectado volumen");
+						case "humedad":
+							System.out.println("ha detectado humedad");
 							op = 1;
 							break;
-						case "fecha":
-							System.out.println("ha detectado fecha");
+						case "temperatura":
+							System.out.println("ha detectado temperatura");
 							op = 2;
 							break;
 						case "luz":
@@ -250,6 +244,11 @@ public class Controller
 							}
 							break;
 					}
+					if(lecturaRecibida.substring(pos+1, pos+7) == "sonda"  &&
+					lecturaRecibida.charAt(pos+7) == '=')
+					{
+						nsonda = Integer.valueOf(lecturaRecibida.substring(pos+8, pos+9));
+					}
 					ejecutarPeticion(op, nsonda, socketHTTPServer);
 					depura("Posicion: " + pos);
 					depura("Solicitud: " + op);
@@ -259,7 +258,7 @@ public class Controller
 				}
 				else if (lecturaRecibida.length() == 0 || lecturaRecibida.equals("index"))
 				{
-					op = 6;
+					op = 3;
 					ejecutarPeticion(op, nsonda, socketHTTPServer);
 				}
 				else

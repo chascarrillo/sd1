@@ -1,3 +1,5 @@
+package myHTTPServer;
+
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -9,6 +11,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.lang.Integer;
+import java.net.*;
 import java.net.Inet4Address;
 import java.net.Socket;
 import java.util.Date;
@@ -27,11 +31,13 @@ extends Thread
 {
 	public static Map<Thread, Socket> hilos = null;
 	private static final int ERROR = 0;
+	private static final int SINSALTO = 1;
 	private static final int DEBUG = 2;
 
 	private int p_controller;
 	private Inet4Address IP_controller;
-	private Socket socketServidor;
+	private ServerSocket socketServidor;
+	private Socket socketNavegador;
 	private BufferedReader in;
 	private PrintWriter out;
 
@@ -47,46 +53,49 @@ extends Thread
 
 	public void depura(String mensaje, int gravedad)
 	{
-		if(gravedad != ERROR)
-			System.out.println("\t" + mensaje);
-		else System.err.println(mensaje);
+		if(gravedad == ERROR)
+			System.err.println(mensaje);
+		else if(gravedad == SINSALTO)
+			System.out.print("\t" + mensaje);
+		else System.out.println("\t" + mensaje);
 	}
 
-	public MyHTTPServer_Thread(Socket recibido, Inet4Address iP, int p_controller, Map<Thread, Socket> hilos)
+	public MyHTTPServer_Thread(Socket recibido, Inet4Address iP, int p_controller, Map<Thread, Socket> hilos, ServerSocket socketServidor)
 	{
-		this.socketServidor = recibido;
+		this.socketNavegador = recibido;
 		this.IP_controller = iP;
 		this.p_controller = p_controller;
 		this.hilos = hilos;
+		this.socketServidor = socketServidor;
 	}
 
 	public void peticionWeb(Socket s)
 	{
-		socketServidor = s;
+		socketNavegador = s;
 		setPriority(NORM_PRIORITY - 1);
 	}
 
-	public String leeSocket(Socket p_sk, String p_Datos)
+	public String leeSocket(Socket socketC)
 	{
+		String devuelto = "";
 		try
 		{
-			InputStream aux = p_sk.getInputStream();
-			DataInputStream flujo = new DataInputStream(aux);
-			p_Datos = flujo.readUTF();
+			DataInputStream flujo = new DataInputStream(socketC.getInputStream());
+			devuelto = flujo.readUTF();
 		}catch (Exception e)
 		{
 			System.out.println("Error: " + e.toString());
+		}finally
+		{
+			return devuelto;
 		}
-
-		return p_Datos;
 	}
 
-	public void escribeSocket(Socket p_sk, String p_Datos)
+	public void escribeSocket(Socket socketC, String p_Datos)
 	{
 		try
 		{
-			OutputStream aux = p_sk.getOutputStream();
-			DataOutputStream flujo = new DataOutputStream(aux);
+			DataOutputStream flujo = new DataOutputStream(socketC.getOutputStream());
 			flujo.writeUTF(p_Datos);
 		}catch (Exception e)
 		{
@@ -103,12 +112,11 @@ extends Thread
 		String datos = "";
 		try
 		{
-			in = new BufferedReader(new InputStreamReader(socketServidor.getInputStream()));
-			out = new PrintWriter(new OutputStreamWriter(socketServidor.getOutputStream(), "UTF8"), true);
+			in = new BufferedReader(new InputStreamReader(socketNavegador.getInputStream()));
+			out = new PrintWriter(new OutputStreamWriter(socketNavegador.getOutputStream(), "UTF8"), true);
 
 			String cadena = "";
 
-			
 			cadena = in.readLine();
 
 			depura("in.readLine() contiene:\n\n\t" + cadena + "\n");
@@ -122,7 +130,7 @@ extends Thread
 				{
 					String pedido = stk.nextToken();
 					depura("Pedido: " + pedido);
-				
+			
 					if (pedido.length() >= 15)
 					{
 						if (!pedido.substring(1, 14).equals("controladorSD"))
@@ -134,14 +142,12 @@ extends Thread
 							try
 							{
 								pedido = pedido.substring(15);
-		
+	
 								Socket sc = new Socket(IP_controller, p_controller);
 								escribeSocket(sc, pedido);
-								String print = leeSocket(sc, datos);
-		
-								PrintWriter pw = new PrintWriter(socketServidor.getOutputStream());
-								pw.println(print);
-								pw.flush();
+								datos = leeSocket(sc);
+	
+								out.println(datos);
 							}
 							catch (Exception e)
 							{
@@ -157,8 +163,6 @@ extends Thread
 				}
 				else envia40x(null, 5);
 			}
-
-			
 		}
 		catch (IOException e)
 		{
@@ -169,7 +173,7 @@ extends Thread
 		{
 			try
 			{
-				socketServidor.close();
+				socketNavegador.close();
 				in.close();
 			}
 			catch (IOException e)
@@ -178,7 +182,7 @@ extends Thread
 			}
 			finally
 			{
-				hilos.remove(this, socketServidor);
+				hilos.remove(this, socketNavegador);
 				depura("Hilo terminado! Cerrando...", ERROR);
 			}
 		}
@@ -207,7 +211,7 @@ extends Thread
 			}
 		} while (linea != null);
 
-		depura("fichero enviado, cerrando comunicacion");
+		depura("fichero enviado");
 
 		ficheroLocal.close();
 	}

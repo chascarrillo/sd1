@@ -38,7 +38,7 @@ MAQUINA 2
 
 
 6 - ejecutamos el controlador
-		java –Djava.security.policy=registrar.policy Controller puertoEscucha ipRMI
+		java -Djava.security.policy=registrar.policy Controller puertoEscucha ipRMI
 
 
 

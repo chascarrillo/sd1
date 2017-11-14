@@ -1,3 +1,6 @@
+package sondasRMI;
+
+import java.io.File;
 import java.rmi.Naming;
 
 /**
@@ -15,9 +18,13 @@ public class RegistroSondas
 			System.setSecurityManager(new SecurityManager());
 			for (int i = 1; i <= 3; i++)
 			{
-				System.out.println("generando sonda " + i);
+				System.out.println("generando 3 sondas en el invernadero " + i);
 				ObjetoRemSondas objRem = new ObjetoRemSondas();
 				nombreSonda = "/Sonda" + i;
+				for(int j = 1; j <= 3; j++)
+				{
+					File fich = new File("./Invernadero" + i + "Sonda" + j + ".txt");
+				}
 				Naming.rebind(nombreSonda, objRem);
 				System.out.println("Servidor de Sondas preparado.");
 			}

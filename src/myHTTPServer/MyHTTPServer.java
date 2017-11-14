@@ -1,6 +1,12 @@
+package myHTTPServer;
+
 import java.net.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.lang.Exception;
@@ -21,7 +27,9 @@ public class MyHTTPServer
 	private int maxConexPermitidas;
 
 	private static final int ERROR = 0;
+	private static final int SINSALTO = 1;
 	private static final int DEBUG = 2;
+	private static final int SINTAB = 3;
 
 	public void depura(String mensaje)
 	{
@@ -30,9 +38,13 @@ public class MyHTTPServer
 
 	public void depura(String mensaje, int gravedad)
 	{
-		if (gravedad != ERROR)
+		if (gravedad == ERROR)
+			System.err.println(mensaje);
+		else if (gravedad == SINSALTO)
+			System.out.print("\t" + mensaje);
+		else if (gravedad == DEBUG)
 			System.out.println("\t" + mensaje);
-		else System.err.println(mensaje);
+		else System.out.print(mensaje);
 	}
 
 	public MyHTTPServer(String[] args)
@@ -72,7 +84,10 @@ public class MyHTTPServer
 
 	boolean run()
 	{
+		SimpleDateFormat dt = new SimpleDateFormat("HH:mm:ss EEE d MMM, yyyy", new Locale("es", "ES"));
+		depura(dt.format((new Date()).getTime()));
 		depura("Servidor en marcha...");
+		depura(path);
 
 		try
 		{
@@ -89,7 +104,7 @@ public class MyHTTPServer
 					Socket recibido = sk.accept();
 					peticionesAtendidas++;
 					depura("Peticiones atendidas: " + peticionesAtendidas);
-					Thread hilo = new MyHTTPServer_Thread(recibido, IP_controller, puerto_controller, hilos);
+					Thread hilo = new MyHTTPServer_Thread(recibido, IP_controller, puerto_controller, hilos, sk);
 					hilos.put(hilo, recibido);
 					hilo.start();
 				} else

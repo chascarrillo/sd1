@@ -1,3 +1,5 @@
+package sondasRMI;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -7,7 +9,9 @@ import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 /**
  *
@@ -67,7 +71,7 @@ implements InterfRemSondas, Serializable
 
 	public void ModificarFichero(File FficheroAntiguo, String nuevodato, int numsonda)
 	{
-		String SnombFichNuev = "./sensor" + numsonda + ".txt";
+		String SnombFichNuev = "./Sonda" + numsonda + ".txt";
 		File FficheroNuevo = new File(SnombFichNuev);
 		try
 		{
@@ -113,6 +117,7 @@ implements InterfRemSondas, Serializable
 		BufferedReader br = null;
 		String dato = "";
 
+		// peticion 1 = humedad, 2 = temperatura
 		try
 		{
 			archivo = new File("./sensor" + numsonda + ".txt");
@@ -125,21 +130,15 @@ implements InterfRemSondas, Serializable
 				switch (peticion)
 				{
 					case 1:
-						if (linea.substring(0, 7).equals("Volumen"))
+						if (linea.substring(0, 7).equals("humedad"))
 						{
 							dato = linea.substring(8);
 						}
 						break;
 					case 2:
-						if (linea.substring(0, 11).equals("UltimaFecha"))
+						if (linea.substring(0, 11).equals("temperatura"))
 						{
 							dato = linea.substring(12);
-						}
-						break;
-					case 3:
-						if (linea.substring(0, 3).equals("Led"))
-						{
-							dato = linea.substring(4);
 						}
 						break;
 					default:
@@ -156,40 +155,45 @@ implements InterfRemSondas, Serializable
 		return dato;
 	}
 
-	public Integer getVolumen(int numsonda)
+	public String[] getHumedad(int numsonda)
 	{
-		int vol = Integer.parseInt(leeFichero(numsonda, 1));
-		if (vol > 100 || vol < 0)
+		int hum = Integer.parseInt(leeFichero(numsonda, 1));
+		if (hum > 100 || hum < 0)
+		{
+			hum = -1;
+		}
+
+		String[] devuelta = new String[4];
+		devuelta[0] = String.valueOf(numsonda);
+		devuelta[1] = String.valueOf(hum);
+		devuelta[2] = getFecha();
+
+		return devuelta;
+	}
+
+	public String getFecha()
+	{
+		SimpleDateFormat dt = new SimpleDateFormat("HH:mm:ss EEEE d MMM, yyyy", new Locale("es", "ES"));
+		return dt.format((new Date()).getTime());
+	}
+
+	public Integer getTemperatura(int numsonda)
+	{
+		int temp = Integer.parseInt(leeFichero(numsonda, 2));
+		if (temp > 45 || temp < -10)
 		{
 			return -1;
 		}
 		else
 		{
-			return vol;
+			return temp;
 		}
 	}
 
-	public String getUltimaFecha(int numsonda)
+	public Integer setHumedad(int humedad, int numsonda)
 	{
-		return leeFichero(numsonda, 2);
-	}
-
-	public Integer getLuz(int numsonda)
-	{
-		return Integer.parseInt(leeFichero(numsonda, 3));
-	}
-
-	public String getFecha(int numsonda)
-	{
-		Date ahora = new Date();
-		ahora.getTime();
-		return ahora.toString();
-	}
-
-	public Integer setLuz(int luz, int numsonda)
-	{
-		File fich = new File("./sensor" + numsonda + ".txt");
-		ModificarFichero(fich, Integer.toString(luz), numsonda);
+		File fich = new File("./Sonda" + numsonda + ".txt");
+		ModificarFichero(fich, Integer.toString(humedad), numsonda);
 		return 0;
 	}
 }
